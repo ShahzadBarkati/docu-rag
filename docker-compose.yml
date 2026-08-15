@@ -1,0 +1,48 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: docu-rag-backend
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - docu-rag-network
+    depends_on:
+      - pgvector_db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:24
+    container_name: docu-rag-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    networks:
+      - docu-rag-network
+
+  pgvector_db:
+    image: pgvector/pgvector:pg17
+    container_name: docu-rag-pgvector-db
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - docu-rag-network
+
+networks:
+  docu-rag-network:
+    driver: bridge
+
+volumes:
+  pgvector_data:
