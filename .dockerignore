@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Composer
+vendor/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+
+# Backup
+*.bak
+*.log
+
+# Test coverage
+coverage/
+
+# Documentation
+README.md
+OVERVIEW.md
+AGENT.md
+
+# Temporary files
+*.tmp

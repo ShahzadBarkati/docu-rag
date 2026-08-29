@@ -18,13 +18,28 @@ services:
     image: node:24
     container_name: docu-rag-frontend
     working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host"
+    command: sh -c "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules)\" ]; then npm install; fi && npm run dev -- --host"
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     networks:
       - docu-rag-network
+
+  queue:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: docu-rag-queue
+    working_dir: /var/www/html
+    command: sh -c "composer install --no-interaction && php artisan queue:work --tries=3 --timeout=1200 --sleep=1 --memory=2048"
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - docu-rag-network
+    depends_on:
+      - pgvector_db
 
   pgvector_db:
     image: pgvector/pgvector:pg17

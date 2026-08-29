@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Ai\Time\CurrentDateTimeProvider;
+use App\Services\Auth\AuthenticationService;
+use App\Services\Auth\Contracts\AuthenticationContract;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +17,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            AuthenticationContract::class,
+            AuthenticationService::class
+        );
+
+        $this->app->bind(CurrentDateTimeProvider::class, function ($app) {
+            return new CurrentDateTimeProvider(
+                (string) $app['config']->get('app.timezone', 'UTC'),
+            );
+        });
     }
 
     /**
@@ -19,6 +34,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('chat', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()->id);
+        });
+
+        RateLimiter::for('upload', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()->id);
+        });
     }
 }
